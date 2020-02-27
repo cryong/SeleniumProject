@@ -8,97 +8,72 @@ namespace SeleniumProject.Pages
 {
 	public class TimeAndMaterialsPage : BasePage
 	{
-		public TimeAndMaterialsPage(IWebDriver driver) : base(driver)
+		By pageDownLocator = By.XPath("//a[@title='Go to the previous page']");
+		By pageLastLocator = By.XPath("//a[@title='Go to the last page']");
+		By codeLocator = By.Id("Code");
+		By descriptionLocator = By.Id("Description");
+		By priceLocator = By.XPath("//*[@id=\"TimeMaterialEditForm\"]/div/div[4]/div/span[1]/span/input[1]");
+		By saveButtonLocator = By.Id("SaveButton");
+		By editButtonLocator = By.XPath("td/a[@class='k-button k-button-icontext k-grid-Edit']");
+		By deleteButtonLocator = By.XPath("td/a[@class='k-button k-button-icontext k-grid-Delete']");
+		By createNewButtonLocator = By.XPath("//a[text()='Create New']");
+
+		public void PageDown(IWebDriver driver)
 		{
+			driver.FindElement(pageDownLocator).Click();
 		}
 
-		public void PageUp()
+		public void PageLast(IWebDriver driver)
 		{
-			Driver.FindElement(By.XPath("//a[@title='Go to the next page']")).Click();
+			driver.FindElement(pageLastLocator).Click();
 		}
 
-		public void PageDown()
+		public void CreateNewTimeAndMaterial(IWebDriver driver, string code, string description, string price)
 		{
-			Driver.FindElement(By.XPath("//a[@title='Go to the previous page']")).Click();
+			driver.FindElement(createNewButtonLocator).Click();
+			driver.FindElement(codeLocator).SendKeys(code);
+			driver.FindElement(descriptionLocator).SendKeys(description);
+			driver.FindElement(priceLocator).SendKeys(price);
+			driver.FindElement(saveButtonLocator).Click();
 		}
 
-		public void PageLast()
+		public void UpdateTimeAndMaterial(IWebDriver driver, string code, string description, string price, string newCode, string newDescription, string newPrice)
 		{
-			Driver.FindElement(By.XPath("//a[@title='Go to the last page']")).Click();
-		}
-
-		public void CreateNewTimeAndMaterial(string code, string description, string price)
-		{
-			Driver.FindElement(By.XPath("//a[text()='Create New']")).Click();
-			Driver.FindElement(By.Id("Code")).SendKeys("test123");
-			Driver.FindElement(By.Id("Description")).SendKeys(description);
-			Driver.FindElement(By.XPath("//*[@id=\"TimeMaterialEditForm\"]/div/div[4]/div/span[1]/span/input[1]")).SendKeys(price);
-			Driver.FindElement(By.Id("SaveButton")).Click();
-		}
-
-		public void UpdateTimeAndMaterial(string code, string description, string price, string newCode, string newDescription, string newPrice)
-		{
-			IWebElement itemToUpdate = Search(code, description, price); // row
-			itemToUpdate.FindElement(By.XPath("td[5]/a[@class='k-button k-button-icontext k-grid-Edit']")).Click();
-			IWebElement codeTextField = Driver.FindElement(By.Id("Code"));
+			IWebElement itemToUpdate = Search(driver, code, description, price); // row
+			itemToUpdate.FindElement(editButtonLocator).Click();
+			IWebElement codeTextField = driver.FindElement(codeLocator);
 			codeTextField.Clear();
 			codeTextField.SendKeys(newCode);
-			IWebElement descriptionTextField = Driver.FindElement(By.Id("Description"));
+			IWebElement descriptionTextField = driver.FindElement(descriptionLocator);
 			descriptionTextField.Clear();
 			descriptionTextField.SendKeys(newDescription);
-			IWebElement priceTextField = Driver.FindElement(By.XPath("//*[@id=\"TimeMaterialEditForm\"]/div/div[4]/div/span[1]/span/input[1]"));
+			IWebElement priceTextField = driver.FindElement(priceLocator);
 			priceTextField.Clear();
-			IWebElement priceTextField2 = Driver.FindElement(By.Id("Price"));
+			IWebElement priceTextField2 = driver.FindElement(By.Id("Price"));
 			priceTextField2.Clear();
 			priceTextField.SendKeys(newPrice);
-			//Thread.Sleep(10000);
-			Driver.FindElement(By.Id("SaveButton")).Click();
+			driver.FindElement(saveButtonLocator).Click();
 
 		}
 
-		public void DeleteTimeAndMaterial(string code, string description, string price)
+		public void DeleteTimeAndMaterial(IWebDriver driver, string code, string description, string price)
 		{
-			IWebElement itemToDelete = Search(code, description, price); // row
-			itemToDelete.FindElement(By.XPath("td[5]/a[@class='k-button k-button-icontext k-grid-Delete']")).Click();
-			// check that confirmation pop up is visible
-			//string popupText = driver.SwitchTo().Alert().Text;
-			//if (popupText == "Are you sure you want to delete this record?")
-			//{
-			//	Console.WriteLine("Test Passed - Delete confirmation popup dialog visible");
-			//}
+			IWebElement itemToDelete = Search(driver, code, description, price); // row
+			itemToDelete.FindElement(deleteButtonLocator).Click();
 			// click OK button
-			Driver.SwitchTo().Alert().Accept();
+			driver.SwitchTo().Alert().Accept();
 		}
 
-		public IWebElement Search(string code, string description, string price)
+		public IWebElement Search(IWebDriver driver, string code, string description, string price)
 		{
-			//IWebElement tableElement = Driver.FindElement(By.XPath("//*[@id=\"tmsGrid\"]/div[3]/table"));
-			int totalNumberOfPages = Convert.ToInt32(Driver.FindElement(By.XPath("//a[@title='Go to the last page']")).GetAttribute("data-page"));
-			Console.WriteLine("number of pages : " + totalNumberOfPages);
-			List<IWebElement> tableRowElements = null;
-			PageLast();
-			//Console.WriteLine("code : " + code + " description : " + description + " price: " + price);
-			// note: it takes too long to iterate through all pages so just limit it to about 5 pages.. should be sufficient.
-			for (int i = totalNumberOfPages; i > totalNumberOfPages - 5; i--)
+			PageLast(driver);
+			// note: just assuming that last row will always be the item that we are looking for... not bothering with row iterations
+			IWebElement row = driver.FindElement(By.XPath("//*[@id=\"tmsGrid\"]/div[3]/table/tbody/tr[@role='row'][last()]"));
+			if (row.FindElement(By.XPath("td[1]")).Text == code && row.FindElement(By.XPath("td[3]")).Text == description)
 			{
-				tableRowElements = new List<IWebElement>(Driver.FindElements(By.XPath("//*[@id=\"tmsGrid\"]/div[3]/table/tbody/tr[@role='row']")));
-				if (tableRowElements.Count == 0)
-				{
-					// just go to previous page if there are no rows on the current page
-					PageDown();
-					continue;
-				}
-				foreach (var row in tableRowElements)
-				{
-					if (row.FindElement(By.XPath("td[1]")).Text == code && row.FindElement(By.XPath("td[3]")).Text == description)
-						//&&
-						//row.FindElement(By.XPath("td[4]")).Text.Contains(price))
-					{
-						return row;
-					}
-				}
-				PageDown();
+				return row;
 			}
+
 			Console.WriteLine("Unable to locate the item");
 			return null;
 		}

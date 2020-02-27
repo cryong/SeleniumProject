@@ -8,24 +8,24 @@ namespace SeleniumProject.Pages
 {
 	public class LoginPage : BasePage
 	{
+		By userNameLocator = By.Id("UserName");
+		By passwordLocator = By.Id("Password");
+		By loginButtonLocator = By.XPath("//input[@type='submit']");
 
-		public LoginPage(IWebDriver driver) : base(driver)
+		public void EnterUserName(IWebDriver driver, string userName)
 		{
+			driver.FindElement(userNameLocator).SendKeys(userName);
 		}
 
-		public void EnterUserName(string userName)
+		public void EnterPassword(IWebDriver driver, string password)
 		{
-			Driver.FindElement(By.Id("UserName")).SendKeys(userName);
+			driver.FindElement(passwordLocator).SendKeys(password);
 		}
 
-		public void EnterPassword(string password)
+		public HomePage Login(IWebDriver driver)
 		{
-			Driver.FindElement(By.Id("Password")).SendKeys(password);
-		}
-
-		public void Login()
-		{
-			Driver.FindElement(By.XPath("//input[@type='submit']")).Click();
+			driver.FindElement(loginButtonLocator).Click();
+			return new HomePage();
 		}
 
 	}

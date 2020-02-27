@@ -7,13 +7,11 @@ namespace SeleniumProject.Pages
 {
 	public class BasePage
 	{
-		private IWebDriver driver;
-
-		public BasePage(IWebDriver driver)
+		enum PageMode
 		{
-			this.driver = driver;
+			ADD,
+			UPDATE,
+			DELETE
 		}
-
-		public IWebDriver Driver { get => driver; set => driver = value; }
 	}
 }

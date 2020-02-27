@@ -7,17 +7,23 @@ namespace SeleniumProject.Pages
 {
 	public class HomePage : BasePage
 	{
-		public HomePage(IWebDriver driver) : base(driver)
+		By administrationMenuLocator = By.XPath("//a[contains(text(), 'Administration')]");
+		By timeAndMaterialMenuLocator = By.XPath("//a[@href='/TimeMaterial']");
+		By userAccountLocator = By.XPath("//*[@id=\"logoutForm\"]/ul/li/a");
+
+		public void ClickAdministrationMenuLink(IWebDriver driver)
 		{
+			driver.FindElement(administrationMenuLocator).Click();
+		}
+		public TimeAndMaterialsPage ClickTimeAndMaterialsMenuLink(IWebDriver driver)
+		{
+			driver.FindElement(timeAndMaterialMenuLocator).Click();
+			return new TimeAndMaterialsPage();
 		}
 
-		public void ClickAdministrationMenuLink()
+		public IWebElement GetUserAccount(IWebDriver driver)
 		{
-			Driver.FindElement(By.XPath("//a[contains(text(), 'Administration')]")).Click();
-		}
-		public void ClickTimeAndMaterialsMenuLink()
-		{
-			Driver.FindElement(By.XPath("//a[@href='/TimeMaterial']")).Click();
+			return driver.FindElement(userAccountLocator);
 		}
 	}
 }
