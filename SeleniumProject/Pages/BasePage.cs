@@ -2,16 +2,16 @@
 using System.Collections.Generic;
 using System.Text;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Support.UI;
 
 namespace SeleniumProject.Pages
 {
 	public class BasePage
 	{
-		enum PageMode
+		public void ClearAndEnter(IWebElement element, string value)
 		{
-			ADD,
-			UPDATE,
-			DELETE
+			element.Clear();
+			element.SendKeys(value);
 		}
 	}
 }
