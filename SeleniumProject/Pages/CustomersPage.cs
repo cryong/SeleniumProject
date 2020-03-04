@@ -28,11 +28,18 @@ namespace SeleniumProject.Pages
         By contactDetailFrame = By.XPath("//iframe[@title='Edit Contact']");
         By editCustomerFrame = By.XPath("//iframe[@title='Edit Client']");
 
+        public void PageDown(IWebDriver driver)
+        {
+            driver.FindElement(pageDownLocator).Click();
+        }
+
         public void CreateNewCustomer(IWebDriver driver, Customer customer)
         {
             driver.FindElement(createNewCustomerButtonLocator).Click();
             // fill out name
             driver.FindElement(customerNameLocator).SendKeys(customer.Name);
+            // check contact check box for simplicity
+            driver.FindElement(isSameContactCheckBoxLocator).Click();
             // click editContactButtonLocator
             driver.FindElement(editContactButtonLocator).Click();
             // fill out contact first name and last name and phone number
@@ -47,16 +54,14 @@ namespace SeleniumProject.Pages
             driver.FindElement(saveContactButtonLocator).Click();
             // switching iframe back
             driver.SwitchTo().DefaultContent();
-            // check contact check box for simplicity
-            driver.FindElement(isSameContactCheckBoxLocator).Click();
             // cick save button
             driver.FindElement(saveButtonLocator).Click();
         }
 
-        public void UpdateCustomer(IWebDriver driver, Customer customer, Customer updatedCustomer)
+        public void UpdateCustomer(IWebDriver driver, string id, Customer updatedCustomer)
         {
             Thread.Sleep(5000);
-            IWebElement customerToUpdate = Search(driver, customer); // row
+            IWebElement customerToUpdate = SearchById(driver, id); // row
             // fill out name
             customerToUpdate.FindElement(editButtonLocator).Click();
             // new client edit iframe
@@ -77,11 +82,15 @@ namespace SeleniumProject.Pages
             driver.FindElement(saveContactButtonLocator).Click();
             // switching iframe back
             driver.SwitchTo().ParentFrame();
-            //driver.SwitchTo().Frame(editCustomrIframe);
-            // check contact check box for simplicity
-            //driver.FindElement(isSameContactCheckBoxLocator).Click();
             // cick save button
             driver.FindElement(saveButtonLocator).Click();
+        }
+
+        public void DeleteCustomer(IWebDriver driver, string id)
+        {
+            Thread.Sleep(2000);
+            SearchById(driver, id).FindElement(deleteButtonLocator).Click();
+            driver.SwitchTo().Alert().Accept();
         }
 
         public void PageLast(IWebDriver driver)
@@ -93,14 +102,55 @@ namespace SeleniumProject.Pages
         {
             Thread.Sleep(3000);
             PageLast(driver);
-            // note: just assuming that last row will always be the item that we are looking for... not bothering with row iterations
+            // note: just assuming that last row will always be the item that we are looking for
             IWebElement row = driver.FindElement(By.XPath("//*[@id=\"clientsGrid\"]/div[2]/table/tbody/tr[@role='row'][last()]"));
-            Console.WriteLine("what ?" + row.FindElement(By.XPath("td[2]")).Text);
             if (row.FindElement(By.XPath("td[2]")).Text == customer.Name)
             {
                 return row;
             }
             Console.WriteLine("Unable to locate customer");
+            return null;
+        }
+
+        public IWebElement SearchById(IWebDriver driver, string id)
+        {
+            Thread.Sleep(3000);
+            PageLast(driver);
+            // current page number 
+            int totalPageNumbers = int.Parse(driver.FindElement(By.ClassName("k-state-selected")).Text);
+            int intId = int.Parse(id);
+            for (var i = 0; i < totalPageNumbers; i++)
+            {
+                var initialRows = driver.FindElements(By.XPath("//*[@id=\"clientsGrid\"]/div[2]/table/tbody/tr[@role='row']"));
+                int firstRowId = int.Parse(initialRows[0].FindElement(By.XPath("td[1]")).Text);
+                int lastRowId = int.Parse(initialRows[initialRows.Count - 1].FindElement(By.XPath("td[1]")).Text);
+                if (firstRowId > intId && lastRowId > intId)
+                {
+                    // hasn't reached the right page
+                    // page down and iterate rows
+                    PageDown(driver);
+                    continue;
+                }
+                if (firstRowId < intId && lastRowId < intId)
+                {
+                    // already have gone past
+                    // fail and return
+                    return null;
+                }
+                foreach (var possibleRow in initialRows)
+                {
+                    if (int.Parse(possibleRow.FindElement(By.XPath("td[1]")).Text) == intId)
+                    {
+                        return possibleRow;
+                    }
+                }
+                //var rows = driver.FindElements(By.XPath("//*[@id=\"clientsGrid\"]/div[2]/table/tbody/tr[@role='row']/td[1][text()='" + id + "']/parent::tr"));
+                //if (rows.Count > 1)
+                //{
+                //    return rows[0];
+                //}
+                //PageDown(driver);
+            }
             return null;
         }
     }

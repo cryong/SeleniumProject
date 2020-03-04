@@ -35,11 +35,10 @@ namespace SeleniumProject.Data
             this.PhoneNumber = phoneNumber;
         }
 
-        // quick solution (TO BE FIXED LATER)
         // convert it to JSON string for comparison
         public override string ToString()
         {
-            return "[" + FirstName + "] [" + LastName + "] [" + PhoneNumber + "]";
+            return Newtonsoft.Json.JsonConvert.SerializeObject(this);
         }
     }
 }

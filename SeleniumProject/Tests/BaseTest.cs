@@ -1,36 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using System.Text;
 using NUnit.Framework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using SeleniumProject.Pages;
+using SeleniumProject.Utilities;
 
 namespace SeleniumProject.Tests
 {
     class BaseTest
     {
-        public IWebDriver driver { get; set; }
+        public IWebDriver Driver { get; set; }
         private const string loginUrl = "http://horse-dev.azurewebsites.net/Account/Login?ReturnUrl=%2f";
 
         [OneTimeSetUp]
         public void SetUp()
         {
+            ExcelLibHelpers.PopulateInCollection(@"..\..\..\Data\TestData.xlsx", "Login");
             // Open chrome
-            driver = new ChromeDriver();
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
+            Driver = new ChromeDriver();
+            Driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
             // Go to the URL
-            driver.Navigate().GoToUrl(loginUrl);
+            Driver.Navigate().GoToUrl(loginUrl);
 
             // Maximise the browser
-            driver.Manage().Window.Maximize();
+            Driver.Manage().Window.Maximize();
 
             LoginPage loginPage = new LoginPage();
             // Locate ID field and enter Hari
             // Locate Password field and enter 123123
-            string userName = "hari";
-            HomePage homePage = loginPage.doLogin(driver, userName, "123123");
-            if (!homePage.GetUserAccount(driver).Text.Contains(userName))
+            string userName = ExcelLibHelpers.ReadData(2, "Username");
+            string passWord = ExcelLibHelpers.ReadData(2, "Password");
+            //Console.WriteLine(Path.Combine(Assembly.GetExecutingAssembly().CodeBase, @"Data\TestData.xlsx"));
+            //Console.WriteLine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data\TestData.xlsx"));
+            HomePage homePage = loginPage.doLogin(Driver, ExcelLibHelpers.ReadData(2, "Username"), passWord);
+            if (!homePage.GetUserAccount(Driver).Text.Contains(userName))
             {
                 Console.WriteLine("Login Failed");
                 throw new WebDriverException("Login Failed");
@@ -40,20 +47,25 @@ namespace SeleniumProject.Tests
         [OneTimeTearDown]
         public void TearDown()
         {
-            driver.Quit();
+            Driver.Quit();
         }
 
-        public static string CalculateCurrentTimeStamp()
+        public string CalculateCurrentTimeStamp()
         {
             return DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
         }
 
-        public static void ValidateURL(IWebDriver driver, string expectedUrl)
+        public void ValidateURL(IWebDriver driver, string expectedUrl)
         {
             if (driver.Url != expectedUrl)
             {
                 Assert.Fail("Currently on URL '" + driver.Url + "' but expected '" + expectedUrl + "'");
             }
+        }
+
+        public int GenerateRandomNumber(int startRange, int endRange)
+        {
+            return new Random().Next(startRange, endRange);
         }
     }
 }

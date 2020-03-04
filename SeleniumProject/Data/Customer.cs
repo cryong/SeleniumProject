@@ -38,5 +38,7 @@ namespace SeleniumProject.Data
             this.BillingContact = billingContact;
             this.IsCustomerContactAndBillingContactSame = (customerContact.ToString() == billingContact.ToString());
         }
+
+
     }
 }
