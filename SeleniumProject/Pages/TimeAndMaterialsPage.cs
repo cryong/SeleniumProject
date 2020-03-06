@@ -58,14 +58,11 @@ namespace SeleniumProject.Pages
             IWebElement itemToUpdate = Search(driver, code, description, price); // row
             itemToUpdate.FindElement(editButtonLocator).Click();
             ClearAndEnter(driver.FindElement(codeLocator), newCode);
-            IWebElement descriptionTextField = driver.FindElement(descriptionLocator);
             ClearAndEnter(driver.FindElement(descriptionLocator), newDescription);
-            IWebElement priceTextField = driver.FindElement(priceLocator);
-            priceTextField.Clear();
-            // FIXME investigate why this needs to be done to update the field value...
-            IWebElement priceTextField2 = driver.FindElement(By.Id("Price"));
-            priceTextField2.Clear();
-            priceTextField.SendKeys(newPrice);
+            IJavaScriptExecutor ex = (IJavaScriptExecutor)driver;
+            // A hack to use JS to update price textfield as it is KendoUI component
+            // making it very difficult to update the value otherwise
+            ex.ExecuteScript("var numerictextbox = $(\"#Price\").data('kendoNumericTextBox'); numerictextbox.focus(); numerictextbox.value(\"" + newPrice + "\")");
             driver.FindElement(saveButtonLocator).Click();
         }
 
@@ -99,6 +96,10 @@ namespace SeleniumProject.Pages
         {
             PageLast(driver);
             // note: just assuming that last row will always be the item that we are looking for... not bothering with row iterations
+            if (driver.FindElements(By.XPath("//*[@id=\"tmsGrid\"]/div[3]/table/tbody/tr[@role='row']")).Count == 0)
+            {
+                PageDown(driver);
+            }
             SynchronizationHelper.WaitForVisibility(driver, By.XPath("//*[@id=\"tmsGrid\"]/div[3]/table/tbody/tr[@role='row'][last()]"), 10);
             IWebElement row = driver.FindElement(By.XPath("//*[@id=\"tmsGrid\"]/div[3]/table/tbody/tr[@role='row'][last()]"));
             if (row.FindElement(By.XPath("td[1]")).Text == code && row.FindElement(By.XPath("td[3]")).Text == description)
