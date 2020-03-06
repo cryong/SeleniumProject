@@ -48,7 +48,7 @@ namespace SeleniumProject.Tests
 
         public void ValidateURL(IWebDriver driver, string expectedUrl)
         {
-            Assert.AreEqual(driver.Url, expectedUrl, "Currently on URL '" + driver.Url + "' but expected '" + expectedUrl + "'");
+            SynchronizationHelper.WaitForURL(driver, expectedUrl, 10);
         }
 
         public int GenerateRandomNumber(int startRange, int endRange)

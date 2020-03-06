@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using OpenQA.Selenium;
 using SeleniumProject.Data;
 using SeleniumProject.Utilities;
@@ -26,6 +25,7 @@ namespace SeleniumProject.Pages
         By contactDetailFrame = By.XPath("//iframe[@title='Edit Contact']");
         By editCustomerFrame = By.XPath("//iframe[@title='Edit Client']");
         By customerRowsLocator = By.XPath("//*[@id='clientsGrid']/div[2]/table/tbody/tr");
+        By customerTableLocator = By.XPath("//*[@id='clientsGrid']/div[2]/table");
         By customerTableRefreshLocator = By.XPath("//a[@title='Refresh']");
 
         public void PageDown(IWebDriver driver)
@@ -43,7 +43,6 @@ namespace SeleniumProject.Pages
             // click editContactButtonLocator
             driver.FindElement(editContactButtonLocator).Click();
             // fill out contact first name and last name and phone number
-            //Thread.Sleep(2000);
             SynchronizationHelper.WaitForVisibility(driver, contactDetailFrame, 10);
             IWebElement contactDetailForm = driver.FindElement(contactDetailFrame);
             // switching to Edit Contact Form iframe
@@ -62,18 +61,16 @@ namespace SeleniumProject.Pages
 
         public void UpdateCustomer(IWebDriver driver, string id, Customer updatedCustomer)
         {
-            //Thread.Sleep(5000);
             IWebElement customerToUpdate = SearchById(driver, id); // row
             // fill out name
             customerToUpdate.FindElement(editButtonLocator).Click();
             // new client edit iframe
-            IWebElement editCustomrIframe = driver.FindElement(editCustomerFrame);
-            driver.SwitchTo().Frame(editCustomrIframe);
+            IWebElement editCustomerIframe = driver.FindElement(editCustomerFrame);
+            driver.SwitchTo().Frame(editCustomerIframe);
             ClearAndEnter(driver.FindElement(customerNameLocator), updatedCustomer.Name);
             // click editContactButtonLocator
             driver.FindElement(editContactButtonLocator).Click();
             // fill out contact first name and last name and phone number
-            //Thread.Sleep(2000);
             SynchronizationHelper.WaitForVisibility(driver, contactDetailFrame, 10);
             IWebElement editContactForm = driver.FindElement(contactDetailFrame);
             // switching to Edit Contact Form iframe
@@ -85,17 +82,18 @@ namespace SeleniumProject.Pages
             driver.FindElement(saveContactButtonLocator).Click();
             // switching iframe back
             driver.SwitchTo().ParentFrame();
+            // have to wait for the contact detail iframe to be hidden before proceeding to clicking save button
+            SynchronizationHelper.WaitForElementToBeHidden(driver, By.Id("contactDetailWindow"),10);
             // cick save button
+            SynchronizationHelper.WaitForClickability(driver, driver.FindElement(saveButtonLocator), 10);
             driver.FindElement(saveButtonLocator).Click();
         }
 
         public void DeleteCustomer(IWebDriver driver, string id)
         {
-            //Thread.Sleep(2000);
             SynchronizationHelper.WaitForVisibility(driver, customerRowsLocator, 10);
             IWebElement row = SearchById(driver, id);
             SynchronizationHelper.WaitForClickability(driver, row.FindElement(deleteButtonLocator), 10);
-            Thread.Sleep(10000);
             row.FindElement(deleteButtonLocator).Click();
             ClickOkForPopUp(driver);
         }
@@ -103,13 +101,18 @@ namespace SeleniumProject.Pages
         public void PageLast(IWebDriver driver)
         {
             // need to wait until a row is displayed in the table before clicking page last button
-            SynchronizationHelper.WaitForVisibility(driver, customerRowsLocator, 10);
-            driver.FindElement(pageLastLocator).Click();
+            //SynchronizationHelper.WaitForVisibility(driver, pageLastLocator, 10);
+            //SynchronizationHelper.WaitForClickability(driver, pageLastLocator, 10);
+            SynchronizationHelper.WaitForElementToBeHidden(driver, By.Id("loader"), 10);
+            IWebElement pageLast = driver.FindElement(pageLastLocator);
+            // rare situation where page last button is disabled because there are no table rows
+            // this can happen when the user deletes a row from the table and the page only had a single record
+            // proceeding to click page down instead
+            pageLast.Click();
         }
 
         public IWebElement Search(IWebDriver driver, Customer customer)
         {
-            //Thread.Sleep(3000);
             PageLast(driver);
             // note: just assuming that last row will always be the item that we are looking for
             SynchronizationHelper.WaitForVisibility(driver, By.XPath("//*[@id=\"clientsGrid\"]/div[2]/table/tbody/tr[@role='row'][last()]"), 10);
@@ -124,16 +127,21 @@ namespace SeleniumProject.Pages
 
         public IWebElement SearchById(IWebDriver driver, string id)
         {
-            //Thread.Sleep(3000);
+            SynchronizationHelper.WaitForElementToBeHidden(driver, By.Id("loader"), 10);
             PageLast(driver);
             // current page number
-            //refreshTable(driver);
             int totalPageNumbers = int.Parse(driver.FindElement(By.ClassName("k-state-selected")).Text);
             int intId = int.Parse(id);
             for (var i = 0; i < totalPageNumbers; i++)
             {
                 SynchronizationHelper.WaitForVisibility(driver, By.XPath("//*[@id=\"clientsGrid\"]/div[2]/table/tbody/tr[@role='row']"), 10);
                 var initialRows = driver.FindElements(By.XPath("//*[@id=\"clientsGrid\"]/div[2]/table/tbody/tr[@role='row']"));
+                Console.WriteLine("rows : " + initialRows.Count);
+                if (initialRows.Count == 0)
+                {
+                    PageDown(driver);
+                    continue;
+                }
                 int firstRowId = int.Parse(initialRows[0].FindElement(By.XPath("td[1]")).Text);
                 int lastRowId = int.Parse(initialRows[initialRows.Count - 1].FindElement(By.XPath("td[1]")).Text);
                 if (firstRowId > intId && lastRowId > intId)
