@@ -5,6 +5,7 @@ using System.Threading;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
 using SeleniumProject.Data;
+using SeleniumProject.Utilities;
 
 namespace SeleniumProject.Pages
 {
@@ -30,6 +31,7 @@ namespace SeleniumProject.Pages
 
         public void PageLast(IWebDriver driver)
         {
+            SynchronizationHelper.WaitForClickability(driver, pageLastLocator, 3);
             driver.FindElement(pageLastLocator).Click();
         }
 
@@ -59,6 +61,7 @@ namespace SeleniumProject.Pages
             descriptionTextField.SendKeys(newDescription);
             IWebElement priceTextField = driver.FindElement(priceLocator);
             priceTextField.Clear();
+            // FIXME investigate why this needs to be done to update the field value...
             IWebElement priceTextField2 = driver.FindElement(By.Id("Price"));
             priceTextField2.Clear();
             priceTextField.SendKeys(newPrice);
@@ -78,10 +81,12 @@ namespace SeleniumProject.Pages
 
         public void DeleteTimeAndMaterial(IWebDriver driver, string code, string description, string price)
         {
+
             IWebElement itemToDelete = Search(driver, code, description, price); // row
+            SynchronizationHelper.WaitForVisibility(driver, deleteButtonLocator, 2);
             itemToDelete.FindElement(deleteButtonLocator).Click();
             // click OK button
-            driver.SwitchTo().Alert().Accept();
+            ClickOkForPopUp(driver);
         }
 
         public void DeleteTimeAndMaterial(IWebDriver driver, TimeAndMaterial timeAndMaterial)
@@ -91,7 +96,7 @@ namespace SeleniumProject.Pages
 
         public IWebElement Search(IWebDriver driver, string code, string description, string price)
         {
-            Thread.Sleep(1000);
+            //Thread.Sleep(1000);
             PageLast(driver);
             // note: just assuming that last row will always be the item that we are looking for... not bothering with row iterations
             IWebElement row = driver.FindElement(By.XPath("//*[@id=\"tmsGrid\"]/div[3]/table/tbody/tr[@role='row'][last()]"));

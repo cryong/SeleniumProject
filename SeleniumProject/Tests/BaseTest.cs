@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using System.Text;
 using NUnit.Framework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -11,7 +7,7 @@ using SeleniumProject.Utilities;
 
 namespace SeleniumProject.Tests
 {
-    class BaseTest
+    public class BaseTest
     {
         public IWebDriver Driver { get; set; }
         private const string loginUrl = "http://horse-dev.azurewebsites.net/Account/Login?ReturnUrl=%2f";
@@ -22,7 +18,7 @@ namespace SeleniumProject.Tests
             ExcelLibHelpers.PopulateInCollection(@"..\..\..\Data\TestData.xlsx", "Login");
             // Open chrome
             Driver = new ChromeDriver();
-            Driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3);
+            //Driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(3); // implicit wait
             // Go to the URL
             Driver.Navigate().GoToUrl(loginUrl);
 
@@ -34,14 +30,9 @@ namespace SeleniumProject.Tests
             // Locate Password field and enter 123123
             string userName = ExcelLibHelpers.ReadData(2, "Username");
             string passWord = ExcelLibHelpers.ReadData(2, "Password");
-            //Console.WriteLine(Path.Combine(Assembly.GetExecutingAssembly().CodeBase, @"Data\TestData.xlsx"));
-            //Console.WriteLine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Data\TestData.xlsx"));
             HomePage homePage = loginPage.doLogin(Driver, ExcelLibHelpers.ReadData(2, "Username"), passWord);
-            if (!homePage.GetUserAccount(Driver).Text.Contains(userName))
-            {
-                Console.WriteLine("Login Failed");
-                throw new WebDriverException("Login Failed");
-            }
+            // Verify that the user has successfully logged into the web portal
+            Assert.IsTrue(homePage.GetUserAccount(Driver).Text.Contains(userName), "Login Failed");
         }
 
         [OneTimeTearDown]
@@ -57,10 +48,7 @@ namespace SeleniumProject.Tests
 
         public void ValidateURL(IWebDriver driver, string expectedUrl)
         {
-            if (driver.Url != expectedUrl)
-            {
-                Assert.Fail("Currently on URL '" + driver.Url + "' but expected '" + expectedUrl + "'");
-            }
+            Assert.AreEqual(driver.Url, expectedUrl, "Currently on URL '" + driver.Url + "' but expected '" + expectedUrl + "'");
         }
 
         public int GenerateRandomNumber(int startRange, int endRange)

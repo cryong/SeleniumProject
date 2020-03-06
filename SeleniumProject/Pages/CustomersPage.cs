@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using OpenQA.Selenium;
 using SeleniumProject.Data;
+using SeleniumProject.Utilities;
 
 namespace SeleniumProject.Pages
 {
@@ -18,7 +17,6 @@ namespace SeleniumProject.Pages
         By contactLastNameLocator = By.XPath("//input[@id='LastName']");
         By contactPhoneNumberLocator = By.XPath("//input[@id='Phone']");
         By saveContactButtonLocator = By.XPath("//input[@value='Save Contact']");
-        By sameContactCheckBoxLocator = By.Id("IsSameContact");
         By saveButtonLocator = By.XPath("//input[@value='Save']");
         By isSameContactCheckBoxLocator = By.Id("IsSameContact");
         By createNewCustomerButtonLocator = By.XPath("//a[text()='Create New']");
@@ -27,6 +25,8 @@ namespace SeleniumProject.Pages
         By deleteButtonLocator = By.XPath("td/a[@class='k-button k-button-icontext k-grid-Delete']");
         By contactDetailFrame = By.XPath("//iframe[@title='Edit Contact']");
         By editCustomerFrame = By.XPath("//iframe[@title='Edit Client']");
+        By customerRowsLocator = By.XPath("//*[@id='clientsGrid']/div[2]/table/tbody/tr");
+        By customerTableRefreshLocator = By.XPath("//a[@title='Refresh']");
 
         public void PageDown(IWebDriver driver)
         {
@@ -43,24 +43,26 @@ namespace SeleniumProject.Pages
             // click editContactButtonLocator
             driver.FindElement(editContactButtonLocator).Click();
             // fill out contact first name and last name and phone number
-            Thread.Sleep(2000);
-            IWebElement iframeXpath = driver.FindElement(contactDetailFrame);
+            //Thread.Sleep(2000);
+            SynchronizationHelper.WaitForVisibility(driver, contactDetailFrame, 10);
+            IWebElement contactDetailForm = driver.FindElement(contactDetailFrame);
             // switching to Edit Contact Form iframe
-            driver.SwitchTo().Frame(iframeXpath);
-            driver.FindElement(contactFirstNameLocator).SendKeys(customer.CustomerContact.FirstName);
-            driver.FindElement(contactLastNameLocator).SendKeys(customer.CustomerContact.LastName);
-            driver.FindElement(contactPhoneNumberLocator).SendKeys(customer.CustomerContact.PhoneNumber);
+            driver.SwitchTo().Frame(contactDetailForm);
+            ClearAndEnter(driver.FindElement(contactFirstNameLocator), customer.CustomerContact.FirstName);
+            ClearAndEnter(driver.FindElement(contactLastNameLocator), customer.CustomerContact.LastName);
+            ClearAndEnter(driver.FindElement(contactPhoneNumberLocator), customer.CustomerContact.PhoneNumber);
             // click save contact button
             driver.FindElement(saveContactButtonLocator).Click();
             // switching iframe back
             driver.SwitchTo().DefaultContent();
             // cick save button
+            SynchronizationHelper.WaitForClickability(driver, saveButtonLocator, 10);
             driver.FindElement(saveButtonLocator).Click();
         }
 
         public void UpdateCustomer(IWebDriver driver, string id, Customer updatedCustomer)
         {
-            Thread.Sleep(5000);
+            //Thread.Sleep(5000);
             IWebElement customerToUpdate = SearchById(driver, id); // row
             // fill out name
             customerToUpdate.FindElement(editButtonLocator).Click();
@@ -71,10 +73,11 @@ namespace SeleniumProject.Pages
             // click editContactButtonLocator
             driver.FindElement(editContactButtonLocator).Click();
             // fill out contact first name and last name and phone number
-            Thread.Sleep(2000);
-            IWebElement editContactFrame = driver.FindElement(contactDetailFrame);
+            //Thread.Sleep(2000);
+            SynchronizationHelper.WaitForVisibility(driver, contactDetailFrame, 10);
+            IWebElement editContactForm = driver.FindElement(contactDetailFrame);
             // switching to Edit Contact Form iframe
-            driver.SwitchTo().Frame(editContactFrame);
+            driver.SwitchTo().Frame(editContactForm);
             ClearAndEnter(driver.FindElement(contactFirstNameLocator), updatedCustomer.CustomerContact.FirstName);
             ClearAndEnter(driver.FindElement(contactLastNameLocator), updatedCustomer.CustomerContact.LastName);
             ClearAndEnter(driver.FindElement(contactPhoneNumberLocator), updatedCustomer.CustomerContact.PhoneNumber);
@@ -88,21 +91,28 @@ namespace SeleniumProject.Pages
 
         public void DeleteCustomer(IWebDriver driver, string id)
         {
-            Thread.Sleep(2000);
-            SearchById(driver, id).FindElement(deleteButtonLocator).Click();
-            driver.SwitchTo().Alert().Accept();
+            //Thread.Sleep(2000);
+            SynchronizationHelper.WaitForVisibility(driver, customerRowsLocator, 10);
+            IWebElement row = SearchById(driver, id);
+            SynchronizationHelper.WaitForClickability(driver, row.FindElement(deleteButtonLocator), 10);
+            Thread.Sleep(10000);
+            row.FindElement(deleteButtonLocator).Click();
+            ClickOkForPopUp(driver);
         }
 
         public void PageLast(IWebDriver driver)
         {
+            // need to wait until a row is displayed in the table before clicking page last button
+            SynchronizationHelper.WaitForVisibility(driver, customerRowsLocator, 10);
             driver.FindElement(pageLastLocator).Click();
         }
 
         public IWebElement Search(IWebDriver driver, Customer customer)
         {
-            Thread.Sleep(3000);
+            //Thread.Sleep(3000);
             PageLast(driver);
             // note: just assuming that last row will always be the item that we are looking for
+            SynchronizationHelper.WaitForVisibility(driver, By.XPath("//*[@id=\"clientsGrid\"]/div[2]/table/tbody/tr[@role='row'][last()]"), 10);
             IWebElement row = driver.FindElement(By.XPath("//*[@id=\"clientsGrid\"]/div[2]/table/tbody/tr[@role='row'][last()]"));
             if (row.FindElement(By.XPath("td[2]")).Text == customer.Name)
             {
@@ -114,13 +124,15 @@ namespace SeleniumProject.Pages
 
         public IWebElement SearchById(IWebDriver driver, string id)
         {
-            Thread.Sleep(3000);
+            //Thread.Sleep(3000);
             PageLast(driver);
-            // current page number 
+            // current page number
+            //refreshTable(driver);
             int totalPageNumbers = int.Parse(driver.FindElement(By.ClassName("k-state-selected")).Text);
             int intId = int.Parse(id);
             for (var i = 0; i < totalPageNumbers; i++)
             {
+                SynchronizationHelper.WaitForVisibility(driver, By.XPath("//*[@id=\"clientsGrid\"]/div[2]/table/tbody/tr[@role='row']"), 10);
                 var initialRows = driver.FindElements(By.XPath("//*[@id=\"clientsGrid\"]/div[2]/table/tbody/tr[@role='row']"));
                 int firstRowId = int.Parse(initialRows[0].FindElement(By.XPath("td[1]")).Text);
                 int lastRowId = int.Parse(initialRows[initialRows.Count - 1].FindElement(By.XPath("td[1]")).Text);
@@ -152,6 +164,12 @@ namespace SeleniumProject.Pages
                 //PageDown(driver);
             }
             return null;
+        }
+
+        public void refreshTable(IWebDriver driver)
+        {
+            SynchronizationHelper.WaitForVisibility(driver, customerRowsLocator, 10);
+            driver.FindElement(customerTableRefreshLocator).Click();
         }
     }
 }

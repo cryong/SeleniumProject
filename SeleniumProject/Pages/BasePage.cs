@@ -13,5 +13,10 @@ namespace SeleniumProject.Pages
 			element.Clear();
 			element.SendKeys(value);
 		}
+
+		public void ClickOkForPopUp(IWebDriver driver)
+		{
+			driver.SwitchTo().Alert().Accept();
+		}
 	}
 }

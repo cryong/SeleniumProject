@@ -2,7 +2,6 @@
 using System.Threading;
 using NUnit.Framework;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
 using SeleniumProject.Data;
 using SeleniumProject.Pages;
 using SeleniumProject.Tests;
@@ -22,6 +21,7 @@ namespace SeleniumProject
             // load data from spreadsheet for each test
             ExcelLibHelpers.PopulateInCollection(@"..\..\..\Data\TestData.xlsx", "TimeAndMaterial");
         }
+
         [Test]
         public void TestDragAndDRop()
         {
@@ -62,10 +62,8 @@ namespace SeleniumProject
                     ExcelLibHelpers.ReadData(GenerateRandomNumber(2, 6), "Price"));
                 timeAndMaterialsPage.CreateNewTimeAndMaterial(Driver, timeAndMaterialObject);
                 // Verify that the item was added
-                if (PerformVerification(Driver, timeAndMaterialsPage, timeAndMaterialObject) == null)
-                {
-                    Assert.Fail("Time and Material was not added - TestAddTimeAndMaterial failed");
-                }
+                Assert.That(PerformVerification(Driver, timeAndMaterialsPage, timeAndMaterialObject), Is.Not.Null, "Time and Material was not added - TestAddTimeAndMaterial failed");
+
             }
             catch (WebDriverException e)
             {
@@ -96,6 +94,8 @@ namespace SeleniumProject
                     ExcelLibHelpers.ReadData(GenerateRandomNumber(2, 6), "Price"));
                 timeAndMaterialsPage.CreateNewTimeAndMaterial(Driver, timeAndMaterialObject);
 
+                Assert.That(PerformVerification(Driver, timeAndMaterialsPage, timeAndMaterialObject), Is.Not.Null, "Time and Material was not added - TestUpdateTimeAndMaterial failed");
+
                 // Update the item that was added just now
                 TimeAndMaterial updatedTimeAndMaterialObject = CreateNewTimeAndMaterial(
                     ExcelLibHelpers.ReadData(GenerateRandomNumber(2, 6), "Code"),
@@ -103,10 +103,7 @@ namespace SeleniumProject
                 timeAndMaterialsPage.UpdateTimeAndMaterial(Driver, timeAndMaterialObject, updatedTimeAndMaterialObject);
 
                 //verify that the item was updated
-                if (PerformVerification(Driver, timeAndMaterialsPage, updatedTimeAndMaterialObject) == null)
-                {
-                    Assert.Fail("Time and Material was not updated - TestUpdateTimeAndMaterial failed");
-                }
+                Assert.That(PerformVerification(Driver, timeAndMaterialsPage, updatedTimeAndMaterialObject), Is.Not.Null, "Time and Material was not updated - TestUpdateTimeAndMaterial failed");
             }
             catch (WebDriverException e)
             {
@@ -132,16 +129,12 @@ namespace SeleniumProject
                 timeAndMaterialsPage.CreateNewTimeAndMaterial(Driver, timeAndMaterialObject);
                 // Verify that the item was added
                 PerformVerification(Driver, timeAndMaterialsPage, timeAndMaterialObject);
-
+                Assert.That(PerformVerification(Driver, timeAndMaterialsPage, timeAndMaterialObject), Is.Not.Null, "Time and Material was not created - TestDeleteTimeAndMaterial failed");
                 // Now perform delete by clicking Delete button
                 timeAndMaterialsPage.DeleteTimeAndMaterial(Driver, timeAndMaterialObject);
 
                 // verify that deletion was successful
-                IWebElement deletedItemElement = PerformVerification(Driver, timeAndMaterialsPage, timeAndMaterialObject);
-                if (deletedItemElement != null)
-                {
-                    Assert.Fail("Test Failed - Delete failed");
-                }
+                Assert.That(PerformVerification(Driver, timeAndMaterialsPage, timeAndMaterialObject), Is.Null, "Time and Material was not deleted - TestDeleteTimeAndMaterial failed");
 
             }
             catch (WebDriverException e)
@@ -153,7 +146,7 @@ namespace SeleniumProject
         private IWebElement PerformVerification(IWebDriver driver, TimeAndMaterialsPage page, string code, string timeStamp, string price)
         {
             // wait 1 second first
-            Thread.Sleep(3000);
+            //Thread.Sleep(3000);
 
             ValidateURL(driver, timeAndMaterialUrl);
             // Verify that the item was added,edited, or deleted by searching for it in the table
